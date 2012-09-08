@@ -33,8 +33,14 @@ namespace luabind { namespace detail
 {
 	LUABIND_API void do_call_member_selection(lua_State* L, char const* name)
 	{
-		object_rep* obj = static_cast<object_rep*>(lua_touserdata(L, -1));
-		lua_pop(L, 1); // pop self
+		object_rep* obj = static_cast<object_rep*>(lua_touserdata(L, -1));	//get_instance(L, -1);
+	
+		lua_pushstring(L, name);
+		lua_gettable(L, -2);
+		lua_remove(L, -2);
+		if (!lua_isnil(L, -1))
+			return;
+		lua_pop(L, 1);
 
 		obj->crep()->get_table(L); // push the crep table
 		lua_pushstring(L, name);

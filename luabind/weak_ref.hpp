@@ -48,6 +48,7 @@ namespace luabind {
         lua_State* state() const;
         void get(lua_State* L) const;
 
+		bool is_valid() const { return (m_impl != 0); }
     private:
         struct impl;
         impl* m_impl;
