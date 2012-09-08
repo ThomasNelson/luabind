@@ -84,8 +84,11 @@ bool get_back_reference(lua_State* L, T const& x)
 #ifndef LUABIND_NO_RTTI
     if (wrap_base const* w = detail::get_back_reference(x))
     {
-        detail::wrap_access::ref(*w).get(L);
-        return true;
+		if (detail::wrap_access::ref(*w).is_valid())
+		{
+			detail::wrap_access::ref(*w).get(L);
+			return true;
+		}
     }
 #endif
     return false;

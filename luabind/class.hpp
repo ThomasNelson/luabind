@@ -94,6 +94,7 @@
 #include <luabind/function.hpp>
 #include <luabind/dependency_policy.hpp>
 #include <luabind/detail/constructor.hpp>
+#include <luabind/detail/factory_ctor.hpp>
 #include <luabind/detail/call.hpp>
 #include <luabind/detail/deduce_signature.hpp>
 #include <luabind/detail/compute_score.hpp>
@@ -106,7 +107,6 @@
 #include <luabind/detail/calc_arity.hpp>
 #include <luabind/detail/call_member.hpp>
 #include <luabind/detail/enum_maker.hpp>
-#include <luabind/detail/get_signature.hpp>
 #include <luabind/detail/operator_id.hpp>
 #include <luabind/detail/pointee_typeid.hpp>
 #include <luabind/detail/link_compatibility.hpp>
@@ -322,6 +322,30 @@ namespace luabind
 			F f;
 			Policies policies;
 		};
+
+		template <class Class, class Pointer, class F, class Policies>
+		struct factory_registration : registration
+		{
+			factory_registration(F f, Policies const& policies):
+				f(f),
+				policies(policies)
+			{}
+
+			void register_(lua_State* L) const
+			{
+				typedef factory_ctor<Class, Pointer, F> ctor_type;
+				typedef typename ctor_type::Signature SignatureType;
+
+ 				object fn = make_function(L, ctor_type(f), 
+ 					SignatureType(), policies);
+
+				add_overload(object(from_stack(L, -1)), "__init", fn);
+			}
+
+			F f;
+			Policies policies;
+		};
+
 
 # ifdef BOOST_MSVC
 #  pragma pack(pop)
@@ -606,6 +630,12 @@ namespace luabind
             return this->def_constructor(&sig, policies);
 		}
 
+		template <class F>
+		class_& factory(F fn)
+		{
+			return this->def_factory(fn, detail::null_type());
+		}
+
         template <class Getter>
         class_& property(const char* name, Getter g)
         {
@@ -841,6 +871,26 @@ namespace luabind
 			this->add_default_member(
 				new detail::memfun_registration<T, Default, Policies>(
 					name, default_, Policies()));
+
+			return *this;
+		}
+
+		template<class F, class Policies>
+		class_& def_factory(F const &fn, Policies const&)
+		{
+			typedef typename boost::mpl::if_<
+				boost::is_same<WrappedType, detail::null_type>
+				, T
+				, WrappedType
+			>::type construct_type;
+
+			this->add_member(
+				new detail::factory_registration<construct_type, HeldType, F, Policies>( fn,
+					Policies()));
+
+			this->add_default_member(
+				new detail::factory_registration<construct_type, HeldType, F, Policies>( fn,
+					Policies()));
 
 			return *this;
 		}

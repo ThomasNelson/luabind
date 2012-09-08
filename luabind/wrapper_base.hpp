@@ -27,6 +27,7 @@
 
 #include <luabind/config.hpp>
 #include <luabind/weak_ref.hpp>
+#include <luabind/function.hpp>
 #include <luabind/detail/ref.hpp>
 #include <luabind/detail/call_member.hpp>
 
@@ -60,6 +61,33 @@ namespace luabind
 		friend struct detail::wrap_access;
 		wrap_base() {}
 
+		bool is_valid() const { return m_self.is_valid(); }
+
+		bool has_method(const char *name) const
+		{
+			lua_State* L = m_self.state();
+			return has_method(L, name);
+		}
+
+		bool has_method(lua_State *L, const char *name) const
+		{
+			bool result(false);
+
+			if (!m_self.is_valid())
+				return false;
+			m_self.get(L);
+			if (lua_isnil(L, -1))
+				return false;
+
+			detail::do_call_member_selection(L, name);
+
+			result = (detail::is_luabind_function(L, -1) || lua_isfunction(L, -1));
+			lua_pop(L, 1);
+
+			return result;
+		}
+
+
     #define BOOST_PP_ITERATION_PARAMS_1 (4, (0, LUABIND_MAX_ARITY, <luabind/wrapper_base.hpp>, 1))
 	#include BOOST_PP_ITERATE()
 
@@ -89,7 +117,8 @@ namespace luabind
 
 #endif // LUABIND_WRAPPER_BASE_HPP_INCLUDED
 
-#elif BOOST_PP_ITERATION_FLAGS() == 1
+#else
+#if BOOST_PP_ITERATION_FLAGS() == 1
 
 #define LUABIND_TUPLE_PARAMS(z, n, data) const A##n *
 #define LUABIND_OPERATOR_PARAMS(z, n, data) const A##n & a##n
@@ -187,4 +216,5 @@ namespace luabind
 
 #undef N
 
+#endif
 #endif

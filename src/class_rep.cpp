@@ -31,6 +31,10 @@
 #include <luabind/get_main_thread.hpp>
 #include <utility>
 
+#if LUA_VERSION_NUM < 502
+# define lua_rawlen lua_objlen
+#endif
+
 using namespace luabind::detail;
 
 namespace luabind { namespace detail
@@ -123,7 +127,7 @@ luabind::detail::class_rep::allocate(lua_State* L) const
 {
 	const int size = sizeof(object_rep);
 	char* mem = static_cast<char*>(lua_newuserdata(L, size));
-	return std::pair<void*,void*>(mem, 0);
+	return std::pair<void*,void*>(mem, static_cast<void *>(0));
 }
 
 namespace
@@ -142,21 +146,14 @@ int luabind::detail::class_rep::constructor_dispatcher(lua_State* L)
 
     push_new_instance(L, cls);
 
-    cls->get_table(L);
-    lua_setfenv(L, -2);
-
-    lua_rawgeti(L, LUA_REGISTRYINDEX, cls->metatable_ref());
-    lua_setmetatable(L, -2);
-
     if (super_deprecation_disabled
         && cls->get_class_type() == class_rep::lua_class
         && !cls->bases().empty())
     {
-        lua_pushstring(L, "super");
         lua_pushvalue(L, 1);
-        lua_pushvalue(L, -3);
+        lua_pushvalue(L, -2);
         lua_pushcclosure(L, super_callback, 2);
-        lua_settable(L, LUA_GLOBALSINDEX);
+        lua_setglobal(L, "super");
     }
 
     lua_pushvalue(L, -1);
@@ -175,9 +172,8 @@ int luabind::detail::class_rep::constructor_dispatcher(lua_State* L)
 
     if (super_deprecation_disabled)
     {
-        lua_pushstring(L, "super");
         lua_pushnil(L);
-        lua_settable(L, LUA_GLOBALSINDEX);
+        lua_setglobal(L, "super");
     }
 
     return 1;
@@ -220,17 +216,15 @@ int luabind::detail::class_rep::super_callback(lua_State* L)
 
 	if (base->bases().empty())
 	{
-		lua_pushstring(L, "super");
 		lua_pushnil(L);
-		lua_settable(L, LUA_GLOBALSINDEX);
+		lua_setglobal(L, "super");
 	}
 	else
 	{
-		lua_pushstring(L, "super");
 		lua_pushlightuserdata(L, base);
 		lua_pushvalue(L, lua_upvalueindex(2));
 		lua_pushcclosure(L, super_callback, 2);
-		lua_settable(L, LUA_GLOBALSINDEX);
+		lua_setglobal(L, "super");
 	}
 
 	base->get_table(L);
@@ -247,9 +241,8 @@ int luabind::detail::class_rep::super_callback(lua_State* L)
 	// TODO: instead of clearing the global variable "super"
 	// store it temporarily in the registry. maybe we should
 	// have some kind of warning if the super global is used?
-	lua_pushstring(L, "super");
 	lua_pushnil(L);
-	lua_settable(L, LUA_GLOBALSINDEX);
+	lua_setglobal(L, "super");
 
 	return 0;
 }
@@ -298,7 +291,7 @@ int luabind::detail::class_rep::static_class_gettable(lua_State* L)
 
 	const char* key = lua_tostring(L, 2);
 
-	if (std::strlen(key) != lua_strlen(L, 2))
+	if (std::strlen(key) != lua_rawlen(L, 2))
 	{
 		lua_pushnil(L);
 		return 1;

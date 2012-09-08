@@ -33,7 +33,7 @@ namespace luabind {
     {
     public:
         weak_ref();
-        weak_ref(lua_State*, int);
+        weak_ref(lua_State* main, lua_State* L, int index);
         weak_ref(weak_ref const&);
         ~weak_ref();
 
@@ -48,6 +48,7 @@ namespace luabind {
         lua_State* state() const;
         void get(lua_State* L) const;
 
+		bool is_valid() const { return (m_impl != 0); }
     private:
         struct impl;
         impl* m_impl;
