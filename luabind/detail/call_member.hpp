@@ -316,7 +316,7 @@ namespace luabind
 
 #endif // LUABIND_CALL_MEMBER_HPP_INCLUDED
 
-#else 
+#else
 #if BOOST_PP_ITERATION_FLAGS() == 1
 
 #define LUABIND_TUPLE_PARAMS(z, n, data) const A##n *
