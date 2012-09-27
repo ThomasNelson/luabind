@@ -11,6 +11,7 @@
 #  include <luabind/object.hpp>
 #  include <luabind/wrapper_base.hpp>
 #  include <luabind/tag_function.hpp>
+#  include <luabind/back_reference_fwd.hpp>
 #  include <luabind/detail/inheritance.hpp>
 
 #  include <boost/preprocessor/iteration/iterate.hpp>
@@ -77,7 +78,7 @@ struct factory_aux<T, Pointer, R (*)( BOOST_PP_ENUM_PARAMS( N, P ) ) >
 
 		R instance( m_factory( BOOST_PP_ENUM_PARAMS( N, a ) ) );
 
-		inject_backref(self_.interpreter(), instance.get(), instance.get());
+		inject_backref(self_.interpreter(), -(N + 1), instance.get(), instance.get());
 
 		void* storage = self->allocate(sizeof(holder_type));
 

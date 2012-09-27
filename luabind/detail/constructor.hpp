@@ -11,6 +11,7 @@
 #  include <luabind/object.hpp>
 #  include <luabind/wrapper_base.hpp>
 #  include <luabind/detail/inheritance.hpp>
+#  include <luabind/back_reference_fwd.hpp>
 
 #  include <boost/preprocessor/iteration/iterate.hpp>
 #  include <boost/preprocessor/iteration/local.hpp>
@@ -18,15 +19,6 @@
 #  include <boost/preprocessor/repetition/enum_binary_params.hpp>
 
 namespace luabind { namespace detail {
-
-inline void inject_backref(lua_State*, void*, void*)
-{}
-
-template <class T>
-void inject_backref(lua_State* L, T* p, wrap_base*)
-{
-    weak_ref(get_main_thread(L), L, 1).swap(wrap_access::ref(*p));
-}
 
 template <std::size_t Arity, class T, class Pointer, class Signature>
 struct construct_aux;
@@ -47,7 +39,7 @@ struct construct_aux<0, T, Pointer, Signature>
         class_rep* cls = self->crep();
 
         std::auto_ptr<T> instance(new T);
-        inject_backref(self_.interpreter(), instance.get(), instance.get());
+        inject_backref(self_.interpreter(), -1, instance.get(), instance.get());
 
         void* naked_ptr = instance.get();
         Pointer ptr(instance.release());
@@ -93,7 +85,7 @@ struct construct_aux<N, T, Pointer, Signature>
         class_rep* cls = self->crep();
 
         std::auto_ptr<T> instance(new T(BOOST_PP_ENUM_PARAMS(N,_)));
-        inject_backref(self_.interpreter(), instance.get(), instance.get());
+        inject_backref(self_.interpreter(), -1, instance.get(), instance.get());
 
         void* naked_ptr = instance.get();
         Pointer ptr(instance.release());

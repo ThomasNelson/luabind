@@ -8,6 +8,7 @@
 # include <boost/type_traits/is_polymorphic.hpp>
 # include <luabind/detail/inheritance.hpp>
 # include <luabind/detail/object_rep.hpp>
+# include <luabind/back_reference_fwd.hpp>
 
 namespace luabind { namespace detail {
 
@@ -81,6 +82,7 @@ void make_instance(lua_State* L, P p)
     }
 
     object_rep* instance = push_new_instance(L, cls);
+	inject_backref(L, -1, get_pointer(p), get_pointer(p));
 
     typedef pointer_holder<P> holder_type;
 

@@ -25,6 +25,16 @@
 
 namespace luabind {
 
+struct wrap_base;
+
+namespace detail {
+	inline void inject_backref(lua_State*, int, const void *, const void *)
+	{}
+
+	template <class T>
+	void inject_backref(lua_State* L, int index, T* p, wrap_base*);
+}
+
 template<class T>
 bool get_back_reference(lua_State* L, T const& x);
 

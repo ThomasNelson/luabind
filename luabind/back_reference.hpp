@@ -76,6 +76,12 @@ namespace detail
       );
   }
   
+  template <class T>
+  void inject_backref(lua_State* L, int index, T* p, wrap_base*)
+  {
+	  weak_ref(get_main_thread(L), L, index).swap(wrap_access::ref(*p));
+  }
+
 } // namespace detail
 
 template<class T>

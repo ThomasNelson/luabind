@@ -75,7 +75,7 @@ namespace luabind
             , ref(0)
         {
             get_weak_table(s);
-            lua_pushvalue(s, index);
+			lua_pushvalue(s, ((index < 0) ? index - 1 : index));
             ref = luaL_ref(s, -2);
             lua_pop(s, 1);
         }
